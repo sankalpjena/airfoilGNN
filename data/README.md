@@ -42,7 +42,7 @@ where:
 
   Here, the key `('36.622', '11.319', '3.941_5.424_1.0_16.283')` represents:
 
-  - Freestream velocity: \(U_{\infty} = 36.622\) m/s
+  - Freestream velocity: $U_{\infty} = 36.622$ m/s
   - Angle of attack: \(\alpha = 11.319^\circ\)
   - NACA airfoil parameters: \(\texttt{NACA(3.941,5.424,1.0,16.283)}\)
 
