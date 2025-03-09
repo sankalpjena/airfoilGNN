@@ -14,8 +14,12 @@ The datasets are divided into training, testing, and extrapolation sets. Each da
 
 2. **Physics-based features (PBF)**: The node features include spatial coordinates, local Reynolds number, and the inviscid pressure coefficient:
 
-   $$
+   <!-- $$
    \mathbf{x}_i = [x, y, \mathrm{Re}_x, c_{p,\mathrm{inviscid}}]^\mathrm{T}
+   $$ -->
+
+    $$
+   \mathbf{x}_i = [x, y, \mathrm{Re}]^\mathrm{T}
    $$
 
 
