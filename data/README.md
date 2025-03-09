@@ -10,7 +10,7 @@ The datasets are divided into training, testing, and extrapolation sets. Each da
 
 $$\mathbf{x}_i = [x, y, \mathrm{Re}]^\mathrm{T}$$
 
-1. Physics-based input features (PBF): The $i^\mathrm{th}$ node features are the spatial coordinates, the local Reynolds number, and the inviscid coefficient of pressure
+2. Physics-based input features (PBF): The $i^\mathrm{th}$ node features are the spatial coordinates, the local Reynolds number, and the inviscid coefficient of pressure
 
 $$\mathbf{x}_i = [x, y, \mathrm{Re}_x, c_{p,\mathrm{inviscid}}]^\mathrm{T}$$
 
