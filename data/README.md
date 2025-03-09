@@ -6,13 +6,18 @@ This folder contains preprocessed (NOT normalised) PyTorch `.pt` datasets for tr
 
 The datasets are divided into training, testing, and extrapolation sets. Each dataset is available in two different feature representations:
 
-1. Geometry-based input features (GBF): The $i^\mathrm{th}$ node features are the spatial coordinates and the Reynolds number
+1. **Geometry-based features (GBF)**: The node features consist of spatial coordinates and the global Reynolds number:
 
-$$\mathbf{x}_i = [x, y, \mathrm{Re}]^\mathrm{T}$$
+   \[
+   \mathbf{x}_i = [x, y, \mathrm{Re}]^\mathrm{T}
+   \]
 
-2. Physics-based input features (PBF): The $i^\mathrm{th}$ node features are the spatial coordinates, the local Reynolds number, and the inviscid coefficient of pressure
+2. **Physics-based features (PBF)**: The node features include spatial coordinates, local Reynolds number, and the inviscid pressure coefficient:
 
-$$\mathbf{x}_i = [x, y, \mathrm{Re}_x, c_{p,\mathrm{inviscid}}]^\mathrm{T}$$
+   \[
+   \mathbf{x}_i = [x, y, \mathrm{Re}_x, c_{p,\mathrm{inviscid}}]^\mathrm{T}
+   \]
+
 
 ### File naming convention
 
