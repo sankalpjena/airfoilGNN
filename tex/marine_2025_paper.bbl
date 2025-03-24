@@ -1,0 +1,135 @@
+\begin{thebibliography}{18}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Basan et~al.(2024)Basan, Fischer, Putland, Brinkkemper, De~Jong, Binnerts, Norro, Kühnel, Ødegaard, Andersson, Lalander, Tougaard, Griffiths, Kosecka, Edwards, Merchant, De~Jong, Robinson, Wang, and Kinneging]{basan2024}
+F.~Basan, J.-G. Fischer, R.~Putland, J.~Brinkkemper, C.~De~Jong, B.~Binnerts, A.~Norro, D.~Kühnel, L.-A. Ødegaard, M.~Andersson, E.~Lalander, J.~Tougaard, E.~Griffiths, M.~Kosecka, E.~Edwards, N.~Merchant, K.~De~Jong, S.~Robinson, L.~Wang, and N.~Kinneging.
+\newblock The underwater soundscape of the north sea.
+\newblock \emph{Marine Pollution Bulletin}, 198:\penalty0 115891, Jan. 2024.
+\newblock ISSN 0025326X.
+\newblock \doi{10.1016/j.marpolbul.2023.115891}.
+
+\bibitem[Bonnet et~al.(2023)Bonnet, Mazari, Cinnella, and Gallinari]{bonnet2023}
+F.~Bonnet, A.~J. Mazari, P.~Cinnella, and P.~Gallinari.
+\newblock Airfrans: High fidelity computational fluid dynamics dataset for approximating reynolds-averaged navier-stokes solutions.
+\newblock \penalty0 (arXiv:2212.07564), June 2023.
+\newblock URL \url{http://arxiv.org/abs/2212.07564}.
+\newblock arXiv:2212.07564 [physics].
+
+\bibitem[Bronstein et~al.(2021)Bronstein, Bruna, Cohen, and Veličković]{bronstein2021}
+M.~M. Bronstein, J.~Bruna, T.~Cohen, and P.~Veličković.
+\newblock Geometric deep learning: Grids, groups, graphs, geodesics, and gauges.
+\newblock \penalty0 (arXiv:2104.13478), May 2021.
+\newblock \doi{10.48550/arXiv.2104.13478}.
+\newblock URL \url{http://arxiv.org/abs/2104.13478}.
+\newblock arXiv:2104.13478 [cs].
+
+\bibitem[Clevert et~al.(2016)Clevert, Unterthiner, and Hochreiter]{clevert2016}
+D.-A. Clevert, T.~Unterthiner, and S.~Hochreiter.
+\newblock Fast and accurate deep network learning by exponential linear units (elus).
+\newblock \penalty0 (arXiv:1511.07289), Feb. 2016.
+\newblock \doi{10.48550/arXiv.1511.07289}.
+\newblock URL \url{http://arxiv.org/abs/1511.07289}.
+\newblock arXiv:1511.07289 [cs].
+
+\bibitem[Drela(1989)]{drela1989}
+M.~Drela.
+\newblock Xfoil: An analysis and design system for low reynolds number airfoils.
+\newblock In T.~J. Mueller, editor, \emph{Low Reynolds Number Aerodynamics}, page 1–12, Berlin, Heidelberg, 1989. Springer.
+\newblock ISBN 978-3-642-84010-4.
+\newblock \doi{10.1007/978-3-642-84010-4_1}.
+
+\bibitem[Dular and Petkovšek(2015)]{dular2015}
+M.~Dular and M.~Petkovšek.
+\newblock On the mechanisms of cavitation erosion – coupling high speed videos to damage patterns.
+\newblock \emph{Experimental Thermal and Fluid Science}, 68:\penalty0 359–370, Nov. 2015.
+\newblock ISSN 08941777.
+\newblock \doi{10.1016/j.expthermflusci.2015.06.001}.
+
+\bibitem[Durasov et~al.(2023)Durasov, Lukoyanov, Donier, and Fua]{durasov2023}
+N.~Durasov, A.~Lukoyanov, J.~Donier, and P.~Fua.
+\newblock Debosh: Deep bayesian shape optimization.
+\newblock \penalty0 (arXiv:2109.13337), Oct. 2023.
+\newblock \doi{10.48550/arXiv.2109.13337}.
+\newblock URL \url{http://arxiv.org/abs/2109.13337}.
+
+\bibitem[Hestness et~al.(2017)Hestness, Narang, Ardalani, Diamos, Jun, Kianinejad, Patwary, Yang, and Zhou]{hestness2017}
+J.~Hestness, S.~Narang, N.~Ardalani, G.~Diamos, H.~Jun, H.~Kianinejad, M.~M.~A. Patwary, Y.~Yang, and Y.~Zhou.
+\newblock Deep learning scaling is predictable, empirically.
+\newblock \penalty0 (arXiv:1712.00409), Dec. 2017.
+\newblock \doi{10.48550/arXiv.1712.00409}.
+\newblock URL \url{http://arxiv.org/abs/1712.00409}.
+\newblock arXiv:1712.00409 [cs].
+
+\bibitem[Immordino et~al.(2025)Immordino, Vaiuso, Da~Ronch, and Righi]{immordino2025}
+G.~Immordino, A.~Vaiuso, A.~Da~Ronch, and M.~Righi.
+\newblock Predicting transonic flowfields in non–homogeneous unstructured grids using autoencoder graph convolutional networks.
+\newblock \emph{Journal of Computational Physics}, 524:\penalty0 113708, Mar. 2025.
+\newblock ISSN 00219991.
+\newblock \doi{10.1016/j.jcp.2024.113708}.
+
+\bibitem[Rote(1991)]{rote1991}
+G.~Rote.
+\newblock Computing the minimum hausdorff distance between two point sets on a line under translation.
+\newblock \emph{Information Processing Letters}, 38\penalty0 (3):\penalty0 123–127, May 1991.
+\newblock ISSN 0020-0190.
+\newblock \doi{10.1016/0020-0190(91)90233-8}.
+
+\bibitem[Scarselli et~al.(2009)Scarselli, Gori, Tsoi, Hagenbuchner, and Monfardini]{scarselli2009}
+F.~Scarselli, M.~Gori, A.~C. Tsoi, M.~Hagenbuchner, and G.~Monfardini.
+\newblock The graph neural network model.
+\newblock \emph{IEEE Transactions on Neural Networks}, 20\penalty0 (11):\penalty0 61–80, Jan. 2009.
+\newblock ISSN 1941-0093.
+\newblock \doi{10.1109/TNN.2008.2005605}.
+
+\bibitem[Serrano et~al.(2023)Serrano, Migus, Yin, Mazari, and Gallinari]{serrano2023}
+L.~Serrano, L.~Migus, Y.~Yin, J.~A. Mazari, and P.~Gallinari.
+\newblock Infinity: Neural field modeling for reynolds-averaged navier-stokes equations.
+\newblock \penalty0 (arXiv:2307.13538), July 2023.
+\newblock \doi{10.48550/arXiv.2307.13538}.
+\newblock URL \url{http://arxiv.org/abs/2307.13538}.
+\newblock arXiv:2307.13538 [cs].
+
+\bibitem[Sharpe(2024)]{sharpe2024}
+P.~D. Sharpe.
+\newblock Accelerating practical engineering design optimization with computational graph transformations.
+\newblock 2024.
+
+\bibitem[Somers(1997)]{somers1997}
+D.~M. Somers.
+\newblock \emph{Design and Experimental Results for the S809 Airfoil}.
+\newblock 1997.
+\newblock URL \url{https://www.nrel.gov/docs/legosti/old/6918.pdf}.
+
+\bibitem[Somers(2005)]{somers2005}
+D.~M. Somers.
+\newblock Design and experimental results for the s827 airfoil: 1998-1999.
+\newblock 2005.
+\newblock \doi{https://doi.org/10.2172/15011672}.
+
+\bibitem[Thuerey et~al.(2020)Thuerey, Weißenow, Prantl, and Hu]{thuerey2020}
+N.~Thuerey, K.~Weißenow, L.~Prantl, and X.~Hu.
+\newblock Deep learning methods for reynolds-averaged navier–stokes simulations of airfoil flows.
+\newblock \emph{AIAA Journal}, 58\penalty0 (11):\penalty0 25–36, 2020.
+\newblock ISSN 0001-1452.
+\newblock \doi{10.2514/1.J058291}.
+
+\bibitem[Wang et~al.(2019)Wang, Sun, Liu, Sarma, Bronstein, and Solomon]{wang2019}
+Y.~Wang, Y.~Sun, Z.~Liu, S.~E. Sarma, M.~M. Bronstein, and J.~M. Solomon.
+\newblock Dynamic graph cnn for learning on point clouds.
+\newblock \penalty0 (arXiv:1801.07829arXiv:1801.07829), June 2019.
+\newblock \doi{10.48550/arXiv.1801.07829}.
+\newblock URL \url{http://arxiv.org/abs/1801.07829}.
+\newblock arXiv:1801.07829 [cs].
+
+\bibitem[Weymouth and Yue(2013)]{weymouth2013}
+G.~D. Weymouth and D.~K. Yue.
+\newblock Physics-based learning models for ship hydrodynamics.
+\newblock \emph{Journal of Ship Research}, 57\penalty0 (1):\penalty0 1–12, Mar. 2013.
+\newblock ISSN 00224502, 15420604.
+\newblock \doi{10.5957/JOSR.57.1.120005}.
+
+\end{thebibliography}
