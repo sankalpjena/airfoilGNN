@@ -1,5 +1,4 @@
 import torch
-import pandas as pd
 # Set the default tensor type to float
 torch.set_default_dtype(torch.float32)
 import torch_geometric
@@ -9,24 +8,23 @@ import sys
 root_path = '../../'
 sys.path.append(root_path)
 from src.core import data_utils_rotated_airfoil
-from src.core import gun_arch_binaryPool_edgeconv
-
-# Import the post processing callback
-from src.utils.training_callbacks import PostProcessTraining # NOTE: Implemented for GBF-B-GUN only
+from src.core import gcn_arch_edgeconv
 
 # Lightning modules
 import lightning as pl
 from lightning.pytorch.loggers import CSVLogger, TensorBoardLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 
-# function call sets the float32 precision for matrix multiplications to 'high'
-# which enables Tensor Core utilization and trades off precision for performance
-# works only with A100 GPUs
+# function call sets the float32 precision for matrix multiplications to 'high', which enables Tensor Core utilization and trades off precision for performance
+# only with A100 GPUs
 
 # Check if CUDA is available before attempting to set the precision
 if torch.cuda.is_available():
     if torch.cuda.get_device_name(0):
         torch.set_float32_matmul_precision('high')  # 'medium' or 'high'
+# else:
+#     print("CUDA is not available or PyTorch is not compiled with CUDA support.")
+
 
 # Native modules
 import time
@@ -55,16 +53,16 @@ def main():
     """
     
     # Create argument parser
-    parser = argparse.ArgumentParser(description="Train Graph-U-Net for airfoil surface pressure prediction")
+    parser = argparse.ArgumentParser(description="Train B-GNN for airfoil surface pressure prediction")
     parser.add_argument('--device', type=str, required=True, help='Device: "cpu' or "gpu")
     parser.add_argument('--max_epochs', type=int, required=True, help='Maximum number of epochs for training')
     parser.add_argument('--batch_size', type=int, required=True, help='Batch size of training set')
     parser.add_argument('--in_channels', type=int, required=True, help='Input features per node')
     parser.add_argument('--out_channels', type=int, required=True, help='Output features per node')
     parser.add_argument('--hidden_channels', type=int, required=True, help='Hidden layer size (arbitrary, can be tuned)')
-    parser.add_argument('--depth', type=int, required=True, help='Pooling and unpooling --depth times')
-    parser.add_argument('--v_cycles', type=int)
     parser.add_argument('--ec_mlp_width', type=int)
+    parser.add_argument('--ec_mlp_layer', type=int)
+    parser.add_argument('--num_ec_layers', type=int, required=True)
 
     # Activation
     parser.add_argument('--activation_function', type=str, required=True, help='Activation function: relu, tanh, elu')
@@ -91,8 +89,6 @@ def main():
     parser.add_argument('--pyg_graph_path_train', type=str, required=True, help='Path to the PyGeometric graph dataset')
     parser.add_argument('--pyg_graph_path_test', type=str, required=True, help='Path to the PyGeometric graph dataset')
 
-    parser.add_argument('--ec_mlp_layer', type=int)
-
     # Parse arguments
     args = parser.parse_args()
     MAX_EPOCHS = args.max_epochs
@@ -100,10 +96,9 @@ def main():
     IN_CHANNELS = args.in_channels
     OUT_CHANNELS = args.out_channels
     HIDDEN_CHANNELS = args.hidden_channels
-    DEPTH = args.depth
-    V_CYCLES = args.v_cycles
     EC_MLP_WIDTH = args.ec_mlp_width
     EC_MLP_LAYER = args.ec_mlp_layer
+    NUM_EC_LAYERS = args.num_ec_layers
 
     CKPT_PATH = args.ckpt_path
     DEVICE = args.device
@@ -132,7 +127,7 @@ def main():
 
     # Set the seed for reproducibility
     pl.seed_everything(MANUAL_SEED)
-
+    
     pyg_graph_dict_train = torch.load(PYG_GRAPH_PATH_TRAIN)
     pyg_graph_dict_test = torch.load(PYG_GRAPH_PATH_TEST)
 
@@ -143,10 +138,10 @@ def main():
     # data_utils.plot_pygraph(sample_graph_data)
 
     # Load dataset using DataModule
-    gnn_datamodule= gun_arch_binaryPool_edgeconv.GNNDataModule(pyg_graph_dict_train=pyg_graph_dict_train, pyg_graph_dict_test=pyg_graph_dict_test, manual_seed=MANUAL_SEED, batch_size_per_gpu=BATCH_SIZE)
+    gnn_datamodule= gcn_arch_edgeconv.GNNDataModule(pyg_graph_dict_train=pyg_graph_dict_train,pyg_graph_dict_test=pyg_graph_dict_test, manual_seed=MANUAL_SEED, batch_size_per_gpu=BATCH_SIZE)
     
     # Setup model
-    gnn_model = gun_arch_binaryPool_edgeconv.LightningGraphUNetEdgeConv(in_channels=IN_CHANNELS, out_channels=OUT_CHANNELS, hidden_channels=HIDDEN_CHANNELS, depth=DEPTH, ec_mlp_width=EC_MLP_WIDTH, ec_mlp_layer=EC_MLP_LAYER, v_cycles=V_CYCLES, lr=LR_FIXED, weight_decay=WEIGHT_DECAY, lr_initial=LR_INITIAL, gamma_decay=LR_GAMMA_DECAY, use_optimizer=USE_OPTIMIZER, activation_function=ACTIVATION_FUNCTION)
+    gnn_model = gcn_arch_edgeconv.LightningEdgeConvModel(in_channels=IN_CHANNELS, out_channels=OUT_CHANNELS, hidden_channels=HIDDEN_CHANNELS, num_edge_conv=NUM_EC_LAYERS, ec_mlp_width=EC_MLP_WIDTH, ec_mlp_layer=EC_MLP_LAYER, lr=LR_FIXED, lr_initial=LR_INITIAL, gamma_decay=LR_GAMMA_DECAY, use_optimizer=USE_OPTIMIZER, activation_function=ACTIVATION_FUNCTION)
     
     # Get the model parameters
     model_summary = summary(gnn_model)
@@ -172,16 +167,6 @@ def main():
         save_weights_only=False
     )
 
-    # Create the post-process callback - turned off by default
-    post_process_callback = PostProcessTraining(
-    interval=100,  # Run every 10 epochs
-    pyg_graph_dict_test=pyg_graph_dict_test,
-    dataset_info_path=f"./split_dataset_info_seed_{MANUAL_SEED}/",  # Pass the path instead of dataframes
-    model_name=GNN_MODEL_NAME,
-    output_dir=f"./training_snapshots_{GNN_MODEL_NAME}/",
-    sigma=10
-    )
-    
     # If you want to validate based on the total training batches, set `check_val_every_n_epoch=None`.
     trainer = pl.Trainer(
         accelerator=DEVICE,
@@ -211,8 +196,8 @@ def main():
     # Save the training time and model info as a CSV file
     with open(f'training_info_{GNN_MODEL_NAME}.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(['Model', 'Model Params', 'Time Taken (minutes)'])
-        writer.writerow([GNN_MODEL_NAME, f'{model_params}', f"{time_taken_minutes:.2f}"])
+        writer.writerow(['Model', 'model_params', 'Time Taken (minutes)'])
+        writer.writerow([GNN_MODEL_NAME, f"{model_params}", f"{time_taken_minutes:.2f}"])
 
 if __name__ == '__main__':
     main()

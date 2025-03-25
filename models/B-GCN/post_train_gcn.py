@@ -19,13 +19,13 @@ sns.set_style("white") # sets background to white
 
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 # Import your custom modules
 import sys
 root_path = '../../'
 sys.path.append(root_path)
-from src.core import gun_arch_binaryPool_edgeconv
+from src.core import gcn_arch_edgeconv
 
 # Import visualisation parameters
 from src.utils.visualisation_parameters import *
@@ -72,43 +72,6 @@ def plot_train_val_loss(csv_path, output_path, title_name, sigma):
     plt.savefig(output_path)
     plt.close()
 
-
-def minmax_normalize_sample(IN_CHANNELS, minmax_df, sample_graph_dict):
-    """
-    Normalizes the sample graph using the provided normalization statistics.
-
-    Args:
-        norm_stats (list): List containing the normalization statistics.
-        sample_graph_dict (dict): Dictionary containing the sample graph data.
-
-    Returns:
-        sample_graph_dict (dict): Dictionary containing the normalized sample graph data
-    """
-    
-    # Unpack the normalization statistics
-    # Convert string to list
-    if IN_CHANNELS == 3:
-        min_x = torch.tensor(ast.literal_eval(minmax_df['min_x[pos_x,pos_y,re]'].values[0]))
-        max_x = torch.tensor(ast.literal_eval(minmax_df['max_x[pos_x,pos_y,re]'].values[0]))
-
-    elif IN_CHANNELS == 4:
-        min_x = torch.tensor(ast.literal_eval(minmax_df['min_x[pos_x,pos_y,re_stag,cp_inv]'].values[0]))
-        max_x = torch.tensor(ast.literal_eval(minmax_df['max_x[pos_x,pos_y,re_stag,cp_inv]'].values[0]))
-
-    min_y = torch.tensor(ast.literal_eval(minmax_df['min_y[cp]'].values[0]))
-    max_y = torch.tensor(ast.literal_eval(minmax_df['max_y[cp]'].values[0]))
-    
-    # Make copies of the dictionaries
-    sample_graph_dict_copy = copy.deepcopy(sample_graph_dict)
-    
-    # Normalize feature vector (Data.x)
-    sample_graph_dict_copy.x = (sample_graph_dict_copy.x - min_x) / (max_x - min_x)
-    sample_graph_dict_copy.x = sample_graph_dict_copy.x.float()
-    sample_graph_dict_copy.y = (sample_graph_dict_copy.y - min_y) / (max_y - min_y)
-    sample_graph_dict_copy.y = sample_graph_dict_copy.y.float()
-    
-    return sample_graph_dict_copy, min_x.float().numpy(), max_x.float().numpy(), min_y.float().numpy(), max_y.float().numpy()
-
 # Function to create test loss
 def create_model_stats(model, datamodule, train_time_path, output_path, csv_path):
     
@@ -145,13 +108,51 @@ def create_model_stats(model, datamodule, train_time_path, output_path, csv_path
     df = pd.DataFrame(data=data_, columns=['test_loss', 'val_loss', 'train_time', 'params'])
     df.to_csv(output_path, index=False)
 
+
+def minmax_normalize_sample(minmax_df, IN_CHANNELS, sample_graph_dict):
+    """
+    Normalizes the sample graph using the provided normalization statistics.
+
+    Args:
+        norm_stats (list): List containing the normalization statistics.
+        sample_graph_dict (dict): Dictionary containing the sample graph data.
+
+    Returns:
+        sample_graph_dict (dict): Dictionary containing the normalized sample graph data
+    """
+    
+    # Unpack the normalization statistics
+    # Convert string to list
+    if IN_CHANNELS == 3:
+        min_x = torch.tensor(ast.literal_eval(minmax_df["min_x[pos_x,pos_y,re]"].values[0]))
+        max_x = torch.tensor(ast.literal_eval(minmax_df["max_x[pos_x,pos_y,re]"].values[0]))
+    
+    elif IN_CHANNELS == 4:
+        min_x = torch.tensor(ast.literal_eval(minmax_df['min_x[pos_x,pos_y,re_stag,cp_inv]'].values[0]))
+        max_x = torch.tensor(ast.literal_eval(minmax_df['max_x[pos_x,pos_y,re_stag,cp_inv]'].values[0]))
+    
+    min_y = torch.tensor(ast.literal_eval(minmax_df['min_y[cp]'].values[0]))
+    max_y = torch.tensor(ast.literal_eval(minmax_df['max_y[cp]'].values[0]))
+    
+    # Make copies of the dictionaries
+    sample_graph_dict_copy = copy.deepcopy(sample_graph_dict)
+    
+    # Normalize feature vector (Data.x)
+    sample_graph_dict_copy.x = (sample_graph_dict_copy.x - min_x) / (max_x - min_x)
+    sample_graph_dict_copy.x = sample_graph_dict_copy.x.float()
+    sample_graph_dict_copy.y = (sample_graph_dict_copy.y - min_y) / (max_y - min_y)
+    sample_graph_dict_copy.y = sample_graph_dict_copy.y.float()
+    
+    return sample_graph_dict_copy, min_x.float().numpy(), max_x.float().numpy(), min_y.float().numpy(), max_y.float().numpy()
+
+
 # Function to create sample inference for all test data
 def create_sample_inference(model, IN_CHANNELS, test_data_df, pyg_graph_dict, minmax_df, output_path):
     sample_inference = {}
     for idx, row in test_data_df.iterrows():
         test_data_key = (row['u_inlet'], row['aoa'], row['naca_param'])
         test_graph_sample = pyg_graph_dict[test_data_key]
-        test_graph_sample_norm, min_x, max_x, min_y, max_y = minmax_normalize_sample(IN_CHANNELS, minmax_df, test_graph_sample)
+        test_graph_sample_norm, min_x, max_x, min_y, max_y = minmax_normalize_sample(minmax_df, IN_CHANNELS, test_graph_sample)
 
         # Data
         label_real = test_graph_sample.y[:, 0].numpy().flatten()
@@ -211,9 +212,8 @@ def plot_cases(cases, sample_inference, output_path):
         U_infty = float(case_key[0])
         aoa = float(case_key[1])
         re_ = U_infty/1.56e-5
-
         # Plot the airfoil profile
-        axs[idx][0].plot(input_real[:,0], input_real[:,1], 'k-', label='Label', linewidth=2)
+        axs[idx][0].plot(input_real[:,0], input_real[:,1], 'k-', label='XFOIL', linewidth=2)
         axs[idx][0].fill_between(input_real[:,0], input_real[:,1], color='skyblue', alpha=0.5)
         axs[idx][0].set_xlabel(r"$x/c$")
         axs[idx][0].set_ylabel(r"$y/c$")
@@ -255,13 +255,11 @@ def main():
     parser.add_argument('--in_channels', type=int, required=False)
     parser.add_argument('--out_channels', type=int, required=False)
     parser.add_argument('--h_value', type=int, required=False)
-    parser.add_argument('--w_value', type=int, required=False)
-    parser.add_argument('--depth', type=int, required=False)
-    parser.add_argument('--v_cycles', type=int, required=False)
     parser.add_argument('--l_value', type=int, required=False)
-    parser.add_argument('--weight_decay', type=float)
-    parser.add_argument('--lr_fixed', type=float, required=False)
-    
+    parser.add_argument('--w_value', type=int, required=False)
+    parser.add_argument('--ec_convs', type=int, required=False)
+    parser.add_argument('--weight_decay', type=float, required=False)
+
     args = parser.parse_args()
     
     MODEL_NAME = args.model_name
@@ -269,14 +267,12 @@ def main():
 
     IN_CHANNELS = args.in_channels
     OUT_CHANNELS = args.out_channels
-    DEPTH = args.depth
-    V_CYCLES = args.v_cycles
+    EC_CONVS = args.ec_convs
     H_VALUE = args.h_value
     W_VALUE = args.w_value
     L_VALUE = args.l_value
     WEIGHT_DECAY = args.weight_decay
-    LR_FIXED = args.lr_fixed
-    
+
     pyg_graph_dict_path_train = args.pyg_graph_path_train
     pyg_graph_dict_path_test = args.pyg_graph_path_test
     
@@ -314,8 +310,8 @@ def main():
     test_data_df = pd.read_csv(test_data_path, dtype=str)
 
     # Load model
-    gnn_model = gun_arch_binaryPool_edgeconv.LightningGraphUNetEdgeConv(in_channels=IN_CHANNELS, out_channels=OUT_CHANNELS, hidden_channels=H_VALUE, depth=DEPTH, ec_mlp_width=W_VALUE, ec_mlp_layer=L_VALUE, v_cycles=V_CYCLES, lr=1e-4, weight_decay=WEIGHT_DECAY, use_optimizer="adam", activation_function="elu")
-       
+    gnn_model = gcn_arch_edgeconv.LightningEdgeConvModel(in_channels=IN_CHANNELS, out_channels=OUT_CHANNELS, hidden_channels=H_VALUE, num_edge_conv=EC_CONVS, ec_mlp_width=W_VALUE, ec_mlp_layer=L_VALUE, lr=1e-4, weight_decay=WEIGHT_DECAY)
+    
     checkpoint = torch.load(model_checkpoint_path, map_location=torch.device('cpu'))
     gnn_model.load_state_dict(checkpoint["state_dict"])
 
@@ -323,10 +319,10 @@ def main():
     gnn_model.eval()
 
     # Create datamodule
-    datamodule = gun_arch_binaryPool_edgeconv.GNNDataModule(pyg_graph_dict_train=pyg_graph_dict_train, pyg_graph_dict_test=pyg_graph_dict_test, manual_seed=SEED,batch_size_per_gpu=500)
+    datamodule = gcn_arch_edgeconv.GNNDataModule(pyg_graph_dict_train=pyg_graph_dict_train, pyg_graph_dict_test=pyg_graph_dict_test, manual_seed=SEED, batch_size_per_gpu=500)
 
     # Plot train and validation loss
-    plot_train_val_loss(mse_loss_csv_path, train_val_loss_output_path, title_name=f"Loss curve - {DEPTH}", sigma=10)
+    plot_train_val_loss(mse_loss_csv_path, train_val_loss_output_path, title_name=f"Loss curve - L{EC_CONVS}", sigma=100)
 
     # Create test loss
     if os.path.exists(train_time_path):

@@ -1,77 +1,35 @@
-"""
-GNN Architecture for two-dimensional airfoil simulation
-
-This module provides the Graph Neural Network (GNN) architecture used for the computational fluid dynamics simulation.
-
-Third-party libraries for the project:
-
-- PyTorch
-- PyTorch-Geometric
-- PyTorch-Lightning
-
-User-defined libraries:
-
-- lib.data_utils_rotated_airfoil: Utility functions for data loading and normalization
-
-Hyper-parameters:
-
-- BATCH_SIZE_PER_GPU
-- EDGE_CONV_MLP_LAYERS
-- EDGE_CONV_MLP_SIZE
-- DECODER_LAYER_SIZE_LIST
-- USE_DECAY_LR
-- FIXED_LEARNING_RATE
-- INITIAL_LEARNING_RATE
-- DECAY_FACTOR
-
-Class Definitions:
-
-1. GNNDataModule(pl.LightningDataModule):
-   Data module for Graph Neural Network.
-
-2. EdgeConvMLP(torch.nn.Module):
-   Multi-Layer Perceptron (MLP) module for the GNN-EdgeConv.
-
-3. LightningEdgeConvModel(pl.LightningModule):
-   Lightning module for the GNN using EdgeConvolution.
-
-    - training_step(self, train_batch, batch_idx) -> Tensor: Training step.
-    - validation_step(self, val_batch, batch_idx) -> Tensor: Validation step.
-    - test_step(self, test_batch, batch_idx) -> Tensor: Test step.
-    - predict_step(self, pred_batch, batch_idx) -> Tensor: Prediction step.
-
-    - configure_optimizers() -> list: Configures the optimizer and learning rate scheduler.
-
-Author: Sankalp Jena
-Date: 29 July 2023
-"""
 
 # Third-party libraries for the project
 
 # PyTorch
 import torch
+from torchinfo import summary
 # Set the default tensor type to float
 torch.set_default_dtype(torch.float32)
 from torch.utils.data import random_split
-from torch.nn import Sequential, Linear, ReLU, Tanh, MSELoss, BatchNorm1d
+from torch.nn import Sequential, Linear, ELU, MSELoss, BatchNorm1d
+from torch_geometric.nn.resolver import activation_resolver
 
 # PyTorch-Geometric
 import torch_geometric
-from torch_geometric.nn.models import GraphUNet
+from torch_geometric.nn import EdgeConv
 from torch_geometric.loader import DataLoader
 
 # PyTorch-Lightning
-import pytorch_lightning as pl
+import lightning as pl
 
 # User-defined libraries
-from src import data_utils_rotated_airfoil
+import sys
+root_path = '../../'
+sys.path.append(root_path)
+from src.core import data_utils_rotated_airfoil
 
 # Dataloader
-num_cpus = 8 #2  # Number of available CPUs, on Taurus NUMA core CPUs, == '--cpus-per-task=8'
+num_cpus = 2 #2  # Number of available CPUs, on Taurus NUMA core CPUs, == '--cpus-per-task=8'
 
 class GNNDataModule(pl.LightningDataModule):
     """Data module for Graph Neural Network."""
-    def __init__(self, pyg_graph_dict, manual_seed, noise_std=0, batch_size_per_gpu=32):
+    def __init__(self, pyg_graph_dict_train, pyg_graph_dict_test, manual_seed, batch_size_per_gpu=32):
         """
         Initialize the GNNDataModule.
 
@@ -80,12 +38,12 @@ class GNNDataModule(pl.LightningDataModule):
             noise_std (float): Standard deviation of the Gaussian noise to be added.
         """
         super().__init__()
-        self.pyg_graph_dict = pyg_graph_dict
+        self.pyg_graph_dict_train = pyg_graph_dict_train
+        self.pyg_graph_dict_test = pyg_graph_dict_test
         self.train_dataset_dict = None
         self.val_dataset_dict = None 
-        self.test_dataset_dict = None
+        self.test_dataset_dict = pyg_graph_dict_test
         self.manual_seed = int(manual_seed)
-        self.noise_std = noise_std
         self.batch_size_per_gpu = batch_size_per_gpu
 
     def setup(self, stage):
@@ -95,30 +53,11 @@ class GNNDataModule(pl.LightningDataModule):
         Args:
             stage (str): Stage of training (e.g., 'fit', 'validate', 'test').
         """
-        self.train_dataset_dict, self.val_dataset_dict, self.test_dataset_dict = data_utils_rotated_airfoil.random_split_dataset(self.pyg_graph_dict, train_ratio=0.8, val_ratio=0.1, seed=self.manual_seed)
+        self.train_dataset_dict, self.val_dataset_dict = data_utils_rotated_airfoil.random_split_dataset(self.pyg_graph_dict_train, self.pyg_graph_dict_test, train_ratio=0.9, seed=self.manual_seed)
         
         norm_stats = data_utils_rotated_airfoil.get_minmax_normalization_stats(self.train_dataset_dict, save_path='./split_dataset_info' + '_seed_' + f'{self.manual_seed}')
         
         self.train_dataset_dict, self.val_dataset_dict, self.test_dataset_dict = data_utils_rotated_airfoil.minmax_normalize_dataset(norm_stats, self.train_dataset_dict, self.val_dataset_dict, self.test_dataset_dict, save_path='./split_dataset_info' + '_seed_' + f'{self.manual_seed}')
-
-        if (stage == 'fit') and (self.noise_std!=0):
-            # Add Gaussian noise to training data
-            self.add_noise_to_dataset(self.train_dataset_dict)
-    
-    def add_noise_to_dataset(self, dataset_dict):
-        """
-        Add Gaussian noise to the dataset.
-
-        Args:
-            dataset_dict (dict): Dictionary containing the dataset to which noise is to be added.
-        """
-        for element in dataset_dict.values():
-            # dict has [pyg_graph, Ub]
-            # print("Before noise: ", element[0].y)
-            element.y = element.y + torch.randn_like(element.y) * self.noise_std
-            # print("After noise: ", element[0].y, '\n')
-            # print('Shape: ', element[0].y.shape)
-            # break
     
     def train_dataloader(self):
         """
@@ -163,45 +102,122 @@ class GNNDataModule(pl.LightningDataModule):
         test_loader = DataLoader(test_dataset_list, batch_size=batch_size, shuffle=False, persistent_workers=True, num_workers=num_cpus,pin_memory=True)
         return test_loader
 
-class LightningGraphUNet(pl.LightningModule):
-    """Lightning module for the GraphUNet using GCN."""
-    def __init__(self, in_channels, out_channels, hidden_channels, depth, pool_ratios, lr_initial=2e-3, gamma_decay=2e-3, use_optimizer="adam", lr=1e-2, activation_function='elu'):
+class EdgeConvMLP(torch.nn.Module):
+    """Multi-Layer Perceptron (MLP) module for the GNN-EdgeConv."""
+    def __init__(self, in_channels, out_channels, ec_mlp_width, ec_mlp_layer, activation_function=ELU()):
+        """
+        Initialize the MLP.
+
+        Args:
+            in_channels (int): Number of input channels = Node Features
+            out_channels (int): Number of output channels = Embedded Space of the Node Features
+            hidden_neurons (int): Number of hidden neurons = intermediate Embedded Space of the Node Features
+            hidden_layers (int): Number of MLP layers, including the output layer
+        """
+        super().__init__()
+        
+        self.activation_function = activation_resolver(activation_function)
+        
+        layers = []
+        mlp_layer_width = ec_mlp_width
+        
+        mlp_layers_dim_list = [mlp_layer_width] * int(ec_mlp_layer)
+
+        # hidden_layer_1
+        layers.append(Linear(in_channels * 2, mlp_layer_width))
+        layers.append(BatchNorm1d(mlp_layer_width))  # Add BatchNorm layer after Linear, and before Activation
+        layers.append(activation_function)
+        # can improve by adding nn.Dropout(drop_prob=0.4), after the Activation
+
+        # Define rest hidden_layers
+        for layer_idx in range(len(mlp_layers_dim_list)-1):
+            layers.append(Linear(mlp_layers_dim_list[layer_idx], mlp_layers_dim_list[layer_idx+1]))
+            layers.append(BatchNorm1d(mlp_layers_dim_list[layer_idx+1]))  # Add BatchNorm layer
+            layers.append(activation_function)
+
+        # final output_layer without activation
+        layers.append(Linear(mlp_layer_width, out_channels))
+
+        self.mlp = Sequential(*layers)
+
+    def forward(self, x):
+        """
+        Perform forward pass through the MLP.
+
+        Args:
+            x (Tensor): Input tensor.
+
+        Returns:
+            Tensor: Output tensor.
+        """
+        # print(f'EC_MLP {summary(self.mlp)}')
+        return self.mlp(x)
+
+class LightningEdgeConvModel(pl.LightningModule):
+    """Lightning module for the GNN using EdgeConvolution.
+    """
+    def __init__(self, in_channels, out_channels, hidden_channels, num_edge_conv, ec_mlp_width, ec_mlp_layer, lr_initial=2e-3, gamma_decay=2e-3, use_optimizer="adam", lr=1e-2, weight_decay=0.0, activation_function=ELU(), skip_connection_type="concat"):
+        
         """
         Initialize the LightningEdgeConvModel.
 
         Args:
-            node_features (int): Number of node features.
-            node_labels (int): Number of node labels.
-        """
-        super(LightningGraphUNet, self).__init__()
+            in_channels (int): Dimension of input node feature
+            hidden_channels (int): Dimension of embedded node features
+            out_channels (int): Dimension of node predictions
 
-        # Model-parameters
-        self.in_channels=in_channels
-        self.out_channels=out_channels
+            num_edge_conv (int): Number of edge convolution layers
+
+            activation_function: Non-linear activation function
+
+            lr*: Learning rates
+        """
+        super(LightningEdgeConvModel, self).__init__()
 
         # Hyper-parameters
-        self.hidden_channels=hidden_channels
-        self.depth=depth
-        self.pool_ratios=pool_ratios
-        
+        # EdgeConv layers
+        self.L = num_edge_conv # Number of EdgeConv
+        self.hidden_neurons=hidden_channels # number of neurons in EdgeConvMLP
+        self.ec_mlp_width = ec_mlp_width
+        self.ec_mlp_layer = ec_mlp_layer
+        self.in_channels = in_channels
         # Optimizer & Learning Rate
         self.use_optimizer = use_optimizer
+        self.weight_decay = weight_decay
         self.LR = lr
         self.lr_initial = lr_initial
         self.gamma_decay = gamma_decay
 
         # Activation Function
-        self.activation_function = activation_function
+        self.activation_function = activation_resolver(activation_function)
 
-        # Initialize the GraphUNet model
-        self.model = GraphUNet(
-            in_channels=self.in_channels,           # Input features per node (2)
-            hidden_channels=self.hidden_channels,      # Hidden layer size (arbitrary, can be tuned)
-            out_channels=self.out_channels,          # Output features per node (1)
-            depth=self.depth,                 # Pooling and unpooling 3 times
-            pool_ratios=self.pool_ratios,          # Keep 50% of nodes during pooling
-            act=self.activation_function
-        )
+        # Skip-connection type
+        self.skip_connection_type = skip_connection_type
+        
+        if self.skip_connection_type == "concat":
+            self.decoder_layers= [int(self.L) * self.hidden_neurons] #DECODER_LAYER_SIZE_LIST #[1024, 512, 256] ... note this needs to be a list
+            decoder_in_dim = int(self.L) * self.hidden_neurons
+
+        # Define L convolutional layers sequentially
+        self.convs = torch.nn.ModuleList()
+        
+        for i in range(self.L):
+            ec_mlp_in_channels = self.in_channels if i == 0 else self.hidden_neurons
+            self.convs.append(EdgeConv(nn=EdgeConvMLP(in_channels=ec_mlp_in_channels, out_channels=self.hidden_neurons, ec_mlp_width=self.ec_mlp_width, ec_mlp_layer=self.ec_mlp_layer, activation_function=self.activation_function), aggr="max"))
+        
+        # Initialize a list to hold the layers
+        layers = []
+
+        # Add the first layer
+        layers.append(torch.nn.Linear(decoder_in_dim, self.decoder_layers[0]))
+        layers.append(BatchNorm1d(self.decoder_layers[0]))
+        layers.append(self.activation_function)
+
+        # Add the final layer
+        layers.append(torch.nn.Linear(self.decoder_layers[-1], out_channels))
+
+        # Create the Sequential model
+        self.decoder = torch.nn.Sequential(*layers)
 
         self.loss = MSELoss(reduction='mean')
 
@@ -216,10 +232,25 @@ class LightningGraphUNet(pl.LightningModule):
         Returns:
             Tensor: Predicted output.
         """
-      
-        # Pass the concatenated features through the decoder
-        output = self.model(x, edge_index)
         
+        if self.skip_connection_type=="concat":
+            # Define local embeddings
+            local_features_list = []
+            for conv in self.convs:
+                x = conv(x, edge_index)
+                local_features_list.append(x)
+            
+            # Concatenate EdgeConv's embedded spaces
+            # local_features = torch.cat((h1, h2, h3), dim=1) 
+            local_features_concat = torch.cat([x for _, x in enumerate(local_features_list)], dim=1) # Size: [N_v x (L*EDGE_CONV_MLP_SIZE = 320)]
+            # print('\n')
+            # print('local_features shape: ', local_features.shape)
+        
+            # Pass the concatenated features through the decoder
+            # print(f"Total decoder layers: {(self.decoder)}")
+            # print(f'PRESSURE_DECODER {summary(self.decoder)}')
+            output = self.decoder(local_features_concat)
+
         return output
     
     def training_step(self, train_batch, batch_idx):
@@ -233,8 +264,8 @@ class LightningGraphUNet(pl.LightningModule):
         Returns:
             Tensor: Training loss.
         """
-        out = self.forward(train_batch.x, train_batch.edge_index)
-        loss = self.loss(out, train_batch.y)
+        out = self.forward(train_batch.x.float(), train_batch.edge_index)
+        loss = self.loss(out.float(), train_batch.y)
         # Log the training loss to TensorBoard
         self.log('train_loss', loss, batch_size=train_batch.x.shape[0], sync_dist=True, prog_bar=True, on_epoch=True, logger=True) #on_step=True
         
@@ -251,8 +282,8 @@ class LightningGraphUNet(pl.LightningModule):
         Returns:
             Tensor: Validation loss.
         """
-        out = self.forward(val_batch.x, val_batch.edge_index)
-        loss = self.loss(out, val_batch.y)
+        out = self.forward(val_batch.x.float(), val_batch.edge_index)
+        loss = self.loss(out.float(), val_batch.y)
         self.log('val_loss', loss, batch_size=val_batch.x.shape[0], sync_dist=True, prog_bar=True, on_epoch=True, logger=True) #on_step=True
         # print(f"Test Loss: {loss.item():.6f}")
         return loss
@@ -286,7 +317,7 @@ class LightningGraphUNet(pl.LightningModule):
         Returns:
             torch.Tensor: Predicted output.
         """
-        out = self.forward(pred_batch.x, pred_batch.edge_index)
+        out = self.forward(pred_batch.x.float(), pred_batch.edge_index)
         return out
 
 
@@ -312,7 +343,7 @@ class LightningGraphUNet(pl.LightningModule):
             list: List containing the optimizer and potentially a learning rate scheduler.
         """
         if self.use_optimizer == "adam":
-            optimizer = torch.optim.Adam(self.parameters(), lr=self.LR)
+            optimizer = torch.optim.Adam(self.parameters(), lr=self.LR, weight_decay=self.weight_decay)
         
         if self.use_optimizer == "lbfgs":
             optimizer = torch.optim.LBFGS(self.parameters(), lr=self.LR, max_iter=20, max_eval=None, tolerance_grad=1e-07, tolerance_change=1e-09, history_size=100, line_search_fn=None)

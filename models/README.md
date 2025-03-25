@@ -41,5 +41,5 @@ The training process generates:
 - Model checkpoints in `{MODEL_NAME}_checkpoints/`
 - TensorBoard logs in `{MODEL_NAME}_tb_logs/`
 - CSV logs in `{MODEL_NAME}_csv_logs/`
-- Training snapshots in `training_snapshots_{MODEL_NAME}/`
+- Training snapshots in `training_snapshots_{MODEL_NAME}/`; NOTE: Implemented for GBF-B-GUN only
 - Final post-processing results in `post_train_data/`
