@@ -4,7 +4,7 @@ There are two architectures:
 1. **B-GCN**: This is a single-level model. Each convolution aggregates information from 1-hop neighbors.
 2. **B-GUN**: This is a multi-level model. The U-Net architecture ensures aggregation from multiple distant nodes in a single convolution operation.
 
-Architecture details can be found in [*Predicting airfoil pressure distribution using boundary graph neural networks*](../docs/airfoilGNN_paper.pdf).
+Architecture descriptions can be found in [*Predicting airfoil pressure distribution using boundary graph neural networks*](https://arxiv.org/abs/2503.18638) (right-click to open in a new tab).
 
 Each model has bash script `config.sh` to define the model parameters, input feature type `GBF/PBF`, model hyperparameters, and computing device `cpu/gpu`.
 

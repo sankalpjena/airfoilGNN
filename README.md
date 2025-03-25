@@ -1,4 +1,4 @@
-This repository contains the [data](./data/) and [models](./models/) used in the work [Predicting airfoil pressure distribution using boundary graph neural networks](https://arxiv.org/abs/2503.18638) (opens in new tab)
+This repository contains the [data](./data/) and [models](./models/) used in the work [*Predicting airfoil pressure distribution using boundary graph neural networks*](https://arxiv.org/abs/2503.18638) (right-click to open in a new tab)
 
 ### Dependencies
 
