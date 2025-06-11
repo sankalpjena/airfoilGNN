@@ -1,1 +1,1 @@
-Contains the TeX source used to publish at [arXiv link to be added]
+Contains the TeX source used in [*Predicting airfoil pressure distribution using boundary graph neural networks*](https://arxiv.org/abs/2503.18638)
