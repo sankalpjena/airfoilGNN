@@ -43,3 +43,5 @@ The training process generates:
 - CSV logs in `{MODEL_NAME}_csv_logs/`
 - Training snapshots in `training_snapshots_{MODEL_NAME}/`; NOTE: Implemented for GBF-B-GUN only
 - Final post-processing results in `post_train_data/`
+
+The folder also contains trained models in `trained_models`.
