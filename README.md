@@ -31,7 +31,9 @@ Modify the line: `name: airfoilGNN` -> `name: your-desired-env-name`
 [GNN Model Training](models/README.md)
 
 
-#### Running the demo tool
+#### Running the airfoil morphing tool
+
+![airfoil morphing example](./notebooks/airfoil_cp_evolution_fps_test_h.gif)
 
 From the terminal,
 ```bash
