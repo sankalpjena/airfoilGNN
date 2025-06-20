@@ -10,6 +10,7 @@ This repository contains the [data](./data/) and [models](./models/) used in the
 - Matplotlib
 - Pandas
 - SciPy
+- Streamlit
 
 ### Install the dependencies using `conda`
 
@@ -17,12 +18,20 @@ This repository contains the [data](./data/) and [models](./models/) used in the
 conda env create -f airfoilGNN_environment.yml 
 ```
 
-This will create a `conda` environment named `torch-lightning`. The `name` can be changed in [airfoilGNN_environment.yml](airfoilGNN_environment.yml)
+This will create a `conda` environment named `airfoilGNN`. The `name` can be changed in [airfoilGNN_environment.yml](airfoilGNN_environment.yml)
 
-Modify the line: `name: torch-lightning` -> `name: your-desired-env-name`
+Modify the line: `name: airfoilGNN` -> `name: your-desired-env-name`
 
 ### Usage
 
 #### Training a Model
 
 [GNN Model Training](models/README.md)
+
+
+#### Running the demo tool
+
+```bash
+cd notebooks
+streamlit run interactive_morphing_v3.py
+```

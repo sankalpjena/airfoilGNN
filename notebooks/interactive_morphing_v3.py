@@ -19,7 +19,7 @@ import ast
 import copy
 
 # Visualisation imports
-from src.utils import visualisation_parameters
+# from src.utils import visualisation_parameters
 import matplotlib.pyplot as plt
 
 # Imports for the Vortex Panel Method (VPM)
