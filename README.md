@@ -14,6 +14,8 @@ This repository contains the [data](./data/) and [models](./models/) used in the
 
 ### Install the dependencies using `conda`
 
+From the terminal and within the folder,
+
 ```bash
 conda env create -f airfoilGNN_environment.yml 
 ```
@@ -31,7 +33,9 @@ Modify the line: `name: airfoilGNN` -> `name: your-desired-env-name`
 
 #### Running the demo tool
 
+From the terminal,
 ```bash
+conda activate airfoilGNN
 cd notebooks
 streamlit run interactive_morphing_v3.py
 ```
