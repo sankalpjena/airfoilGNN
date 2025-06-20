@@ -51,7 +51,7 @@ def load_model(HYPER_PARAMS, MODEL_PARAMS, TRAINED_MODEL_PATH, MODEL_NAME):
     # Initialize the model
     gun_model_viscous = gun_arch_binaryPool_edgeconv.LightningGraphUNetEdgeConv(in_channels=IN_CHANNELS, out_channels=OUT_CHANNELS, hidden_channels=H_VALUE, depth=DEPTH, v_cycles=1, ec_mlp_width=W_VALUE, ec_mlp_layer=L_VALUE, weight_decay=WEIGHT_DECAY, lr=LEARNING_RATE)
 
-    checkpoint = torch.load(TRAINED_MODEL_PATH + MODEL_NAME, map_location=torch.device('cpu'))
+    checkpoint = torch.load(TRAINED_MODEL_PATH + MODEL_NAME, map_location=torch.device('cpu'), weights_only=False)
     gun_model_viscous.load_state_dict(checkpoint["state_dict"])
 
     # disable randomness, dropout, etc...
@@ -68,7 +68,7 @@ def load_dataset_stats(TRAINED_MODEL_PATH):
     minmax_stats_path = dataset_info_path + "minmax_normalization_stats.csv"
     minmax_df = pd.read_csv(minmax_stats_path)
     PYG_GRAPH_PATH_TEST_PBF = "../data/airfrans_test_data_PBF.pt"
-    pyg_graph_dict_test = torch.load(PYG_GRAPH_PATH_TEST_PBF)
+    pyg_graph_dict_test = torch.load(PYG_GRAPH_PATH_TEST_PBF, weights_only=False)
 
     return minmax_df, pyg_graph_dict_test
 
